@@ -11,8 +11,10 @@ Custom component for Home Assistant to control your SONOS Alarm
 ## Installation
 
 **Install via HACS**
+
+The custom component will soon be available via 
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
-The custom component is available via [HACS](https://github.com/custom-components/hacs)
 
 **Manual Install**
 
