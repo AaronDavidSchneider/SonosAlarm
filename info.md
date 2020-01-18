@@ -1,4 +1,4 @@
-![Example](example.png?raw=true "Example")
+![Example](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/example.png)
 # Sonos Alarm
 
 Custom component for Home Assistant to control your SONOS Alarm
