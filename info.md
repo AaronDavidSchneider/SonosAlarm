@@ -1,7 +1,10 @@
-![Example](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/example.png)
+![Logo](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/logo%402x.png)
+
 # Sonos Alarm
 
 Custom component for Home Assistant to control your SONOS Alarm
+
+![Example](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/example.png)
 
 **Features:**
 
