@@ -1,5 +1,6 @@
 """Switch for Sonos alarms."""
 from datetime import timedelta
+from datetime import datetime
 import logging
 
 import socket
@@ -28,6 +29,7 @@ DISCOVERY_INTERVAL = 60
 ATTR_DURATION = "duration"
 ATTR_PLAY_MODE = "play_mode"
 ATTR_RECURRENCE = "recurrence"
+ATTR_SCHEDULED_TODAY = "scheduled_today"
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -128,6 +130,7 @@ class SonosAlarmSwitch(SwitchEntity):
             ATTR_INCLUDE_LINKED_ZONES: self.alarm.include_linked_zones,
             ATTR_RECURRENCE: str(self.alarm.recurrence),
             ATTR_PLAY_MODE: str(self.alarm.play_mode),
+            ATTR_SCHEDULED_TODAY: self.alarm.is_valid_recurrence(int(datetime.today().strftime('%w')))
         }
         super().__init__()
 
@@ -142,6 +145,7 @@ class SonosAlarmSwitch(SwitchEntity):
             self._attributes[ATTR_RECURRENCE] = str(self.alarm.recurrence)
             self._attributes[ATTR_VOLUME] = self.alarm.volume / 100
             self._attributes[ATTR_PLAY_MODE] = str(self.alarm.play_mode)
+            self._attributes[ATTR_SCHEDULED_TODAY] = self.alarm.is_valid_recurrence(int(datetime.today().strftime('%w')))
             self._attributes[
                 ATTR_INCLUDE_LINKED_ZONES
             ] = self.alarm.include_linked_zones
