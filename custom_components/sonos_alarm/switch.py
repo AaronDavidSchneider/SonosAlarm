@@ -109,9 +109,6 @@ class SonosAlarmSwitch(SwitchEntity):
         self._is_available = True
         speaker_info = self._soco.get_speaker_info(True)
         self._unique_id = "{}-{}".format(soco.uid, self._id)
-        self._name = "Sonos {} Alarm (id: {})".format(
-            speaker_info["zone_name"], self._id
-        )
         _entity_id = slugify("sonos_alarm_{}".format(self._id))
         self.entity_id = ENTITY_ID_FORMAT.format(_entity_id)
         self._model = speaker_info["model_name"]
@@ -131,6 +128,13 @@ class SonosAlarmSwitch(SwitchEntity):
             ATTR_PLAY_MODE: str(self.alarm.play_mode),
             ATTR_SCHEDULED_TODAY: self._is_today
         }
+
+        self._name = "Sonos Alarm {} {} {}".format(
+            speaker_info["zone_name"],
+            self.alarm.recurrence.title(),
+            str(self.alarm.start_time)[0:5]
+        )
+
         _LOGGER.debug(self.alarm.recurrence)
         super().__init__()
         _LOGGER.debug("reached end of init")
@@ -151,6 +155,14 @@ class SonosAlarmSwitch(SwitchEntity):
                 ATTR_INCLUDE_LINKED_ZONES
             ] = self.alarm.include_linked_zones
             self._is_available = True
+
+            speaker_info = self._soco.get_speaker_info(True)
+            self._name = "Sonos Alarm {} {} {}".format(
+                speaker_info["zone_name"],
+                self.alarm.recurrence.title(),
+                str(self.alarm.start_time)[0:5]
+            )
+
             _LOGGER.debug("successfully updated alarms")
         except SoCoException as exc:
             _LOGGER.error(
