@@ -47,7 +47,7 @@ sonos_alarm:
 For more information see: https://www.home-assistant.io/integrations/sonos/#advanced-use
 (same idea, just use `sonos_alarm` and `switch` instead of `sonos` and `media_player`)
 
-Many thanks for bringing this up @Schmandre!!!
+Many thanks for bringing this up [@Schmandre](https://github.com/Schmandre)!!!
 
 ## Exposed entities
 
