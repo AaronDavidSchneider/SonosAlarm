@@ -42,7 +42,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Sonos from a config entry."""
 
-    config = hass.data[SONOS_DOMAIN].get("media_player", {})
+    config = hass.data[SONOS_DOMAIN].get("switch", {})
     _LOGGER.debug("Reached async_setup_entry of alarm, config=%s", config)
 
     advertise_addr = config.get(CONF_ADVERTISE_ADDR)
