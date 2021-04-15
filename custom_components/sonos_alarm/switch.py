@@ -6,7 +6,7 @@ import logging
 import socket
 import pysonos
 from pysonos import alarms
-from pysonos.exceptions import SoCoException
+from pysonos.exceptions import SoCoUPnPException
 
 from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
 from homeassistant.util import slugify
@@ -66,7 +66,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         hass.add_job(
                             async_add_entities, [SonosAlarmSwitch(soco, one_alarm)],
                         )
-            except SoCoException as ex:
+            except SoCoUPnPException as ex:
                 _LOGGER.debug("SoCoException, ex=%s", ex)
 
         if hosts:
@@ -79,7 +79,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         _ = player.volume
 
                         _discovered_alarm(player)
-                except (OSError, SoCoException) as ex:
+                except (OSError, SoCoUPnPException) as ex:
                     _LOGGER.debug("Exception %s", ex)
                     if now is None:
                         _LOGGER.warning("Failed to initialize '%s'", host)
@@ -139,11 +139,15 @@ class SonosAlarmSwitch(SwitchEntity):
         super().__init__()
         _LOGGER.debug("reached end of init")
 
-    def update(self, now=None):
+    async def async_update(self, now=None):
         """Retrieve latest state."""
         _LOGGER.debug("updating alarms")
         try:
-            alarms.get_alarms(self._soco)
+            current_alarms = await self.hass.async_add_executor_job(lambda: alarms.get_alarms(self._soco))
+            if self.alarm not in current_alarms:
+                self._is_available = False
+                return
+
             self._is_on = self.alarm.enabled
             self._attributes[ATTR_TIME] = str(self.alarm.start_time)
             self._attributes[ATTR_DURATION] = str(self.alarm.duration)
@@ -164,9 +168,9 @@ class SonosAlarmSwitch(SwitchEntity):
             )
 
             _LOGGER.debug("successfully updated alarms")
-        except SoCoException as exc:
-            _LOGGER.error(
-                "Home Assistant couldnt update the state of the alarm %s",
+        except SoCoUPnPException as exc:
+            _LOGGER.warning(
+                "Home Assistant couldn't update the state of the alarm %s",
                 exc,
                 exc_info=True,
             )
@@ -233,26 +237,28 @@ class SonosAlarmSwitch(SwitchEntity):
         """Return unavailability of alarm switch."""
         return self._is_available
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn alarm switch on."""
-        if self.handle_switch_on_off(turn_on=True):
+        sucess = await self.async_handle_switch_on_off(turn_on=True)
+        if sucess:
             self._is_on = True
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn alarm switch off."""
-        if self.handle_switch_on_off(turn_on=False):
+        sucess = await self.async_handle_switch_on_off(turn_on=False)
+        if sucess:
             self._is_on = False
 
-    def handle_switch_on_off(self, turn_on: bool) -> bool:
+    async def async_handle_switch_on_off(self, turn_on: bool) -> bool:
         """Handle turn on/off of alarm switch."""
         # pylint: disable=import-error
         try:
             self.alarm.enabled = turn_on
-            self.alarm.save()
+            await self.hass.async_add_executor_job(self.alarm.save)
             self._is_available = True
             return True
-        except SoCoException as exc:
-            _LOGGER.error(
+        except SoCoUPnPException as exc:
+            _LOGGER.warning(
                 "Home Assistant couldnt switch the alarm %s", exc, exc_info=True
             )
             self._is_available = False
