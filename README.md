@@ -29,6 +29,26 @@ If you want to install the custom commponent manually, add the folder `sonos_ala
 
 Go to the `Integrations pane` on your Home Assistant instance and search for `Sonos Alarm`.
 
+**Advanced Use:**
+
+You can also use configuration.yaml configurations to specify your specific network requirements.
+
+Here is an example configuration:
+
+```yaml
+sonos_alarm:
+   switch:
+      hosts:
+        - 192.168.178.22
+        - 192.168.178.29
+        - 192.168.178.24
+```
+
+For more information see: https://www.home-assistant.io/integrations/sonos/#advanced-use
+(same idea, just use `sonos_alarm` and `switch` instead of `sonos` and `media_player`)
+
+Many thanks for bringing this up @Schmandre!!!
+
 ## Exposed entities
 
 - `switch.sonos_alarm_[id of your alarm]` for each of your SONOS Alarms
