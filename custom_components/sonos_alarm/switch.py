@@ -216,7 +216,7 @@ class SonosAlarmSwitch(SwitchEntity):
         # pylint: disable=import-error
         try:
             self.alarm.enabled = turn_on
-            self.alarm.save()
+            await self.hass.async_add_executor_job(self.alarm.save)
             self._is_available = True
             return True
         except SoCoUPnPException as exc:
