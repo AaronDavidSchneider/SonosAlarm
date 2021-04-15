@@ -160,7 +160,7 @@ class SonosAlarmSwitch(SwitchEntity):
             ] = self.alarm.include_linked_zones
             self._is_available = True
 
-            speaker_info = self._soco.get_speaker_info(True)
+            speaker_info = await self.hass.async_add_executor_job(lambda: self._soco.get_speaker_info(True))
             self._name = "Sonos Alarm {} {} {}".format(
                 speaker_info["zone_name"],
                 self.alarm.recurrence.title(),
