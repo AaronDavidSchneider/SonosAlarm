@@ -246,29 +246,17 @@ class SonosAlarmSwitch(SwitchEntity):
         """Return a unique ID."""
         return self._unique_id
 
-#    For future reference: Use the same device_info like sonos: -> needs some way to update the device_info
-#
-#    @property
-#    def device_info(self) -> dict:
-#        """Return information about the device."""
-#        return {
-#            "identifiers": {(SONOS_DOMAIN, self._unique_player_id)},
-#            "name": self._speaker_name,
-#            "model": self._model.replace("Sonos ", ""),
-#            "sw_version": self._sw_version,
-#            "connections": {(dr.CONNECTION_NETWORK_MAC, self._mac_address)},
-#            "manufacturer": "Sonos",
-#            "suggested_area": self._speaker_name,
-#        }
-#
     @property
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(SONOS_DOMAIN, self._unique_id)},
-            "name": "Sonos Alarm - ID: {}".format(self._id),
-            "model": "alarm",
+            "identifiers": {(SONOS_DOMAIN, self._unique_player_id)},
+            "name": self._speaker_name,
+            "model": self._model.replace("Sonos ", ""),
+            "sw_version": self._sw_version,
+            "connections": {(dr.CONNECTION_NETWORK_MAC, self._mac_address)},
             "manufacturer": "Sonos",
+            "suggested_area": self._speaker_name,
         }
 
 
