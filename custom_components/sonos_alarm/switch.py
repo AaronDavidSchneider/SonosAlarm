@@ -152,6 +152,21 @@ class SonosAlarmSwitch(SwitchEntity):
         else:
             return False
 
+    async def _async_remove(self):
+        """remove this entity as it is not available anymore"""
+        entity_registry = er.async_get(self.hass)
+        entity_registry.async_remove(self.entity_id)
+
+    async def _async_update_device(self):
+        """update the device, since this alarm moved to a different player"""
+        device_registry = dr.async_get(self.hass)
+        entity_registry = er.async_get(self.hass)
+        entry_id = entity_registry.async_get(self.entity_id).config_entry_id
+
+        new_device = device_registry.async_get_or_create(config_entry_id=entry_id, identifiers = {(SONOS_DOMAIN, self._unique_player_id)}, connections={(dr.CONNECTION_NETWORK_MAC, self._mac_address)})
+        if not entity_registry.async_get(self.entity_id).device_id == new_device.id:
+            entity_registry._async_update_entity(self.entity_id, device_id=new_device.id)
+
     async def async_update(self, now=None):
         """Retrieve latest state."""
         _LOGGER.debug("updating alarms")
@@ -159,6 +174,7 @@ class SonosAlarmSwitch(SwitchEntity):
             self._is_available = await self.hass.async_add_executor_job(self._get_current_alarm_instance)
 
             if not self._is_available:
+                self.hass.async_create_task(self._async_remove())
                 return
 
             self._is_on = self.alarm.enabled
@@ -170,7 +186,7 @@ class SonosAlarmSwitch(SwitchEntity):
                 self._sw_version: str = speaker_info["software_version"]
                 self._mac_address: str = speaker_info["mac_address"]
                 self._unique_player_id: str = self.alarm.zone.uid
-                self._update_device()
+                await self._update_device()
 
 
             self._name = "Sonos Alarm {} {} {}".format(
@@ -200,16 +216,6 @@ class SonosAlarmSwitch(SwitchEntity):
                 exc_info=True,
             )
             self._is_available = False
-
-    def _update_device(self):
-        device_registry = dr.async_get(self.hass)
-        entity_registry = er.async_get(self.hass)
-        entry_id = entity_registry.async_get(self.entity_id).config_entry_id
-
-        new_device = device_registry.async_get_or_create(config_entry_id=entry_id, identifiers = {(SONOS_DOMAIN, self._unique_player_id)}, connections={(dr.CONNECTION_NETWORK_MAC, self._mac_address)})
-        if not entity_registry.async_get(self.entity_id).device_id == new_device.id:
-            entity_registry._async_update_entity(self.entity_id, device_id=new_device.id)
-
 
     @property
     def _is_today(self):
