@@ -9,7 +9,7 @@ from pysonos import alarms
 from pysonos.exceptions import SoCoUPnPException
 
 from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
-import homeassistant.helpers.device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import slugify
 
 from . import (
@@ -152,6 +152,21 @@ class SonosAlarmSwitch(SwitchEntity):
         else:
             return False
 
+    async def _async_remove(self):
+        """remove this entity as it is not available anymore"""
+        entity_registry = er.async_get(self.hass)
+        entity_registry.async_remove(self.entity_id)
+
+    async def _async_update_device(self):
+        """update the device, since this alarm moved to a different player"""
+        device_registry = dr.async_get(self.hass)
+        entity_registry = er.async_get(self.hass)
+        entry_id = entity_registry.async_get(self.entity_id).config_entry_id
+
+        new_device = device_registry.async_get_or_create(config_entry_id=entry_id, identifiers = {(SONOS_DOMAIN, self._unique_player_id)}, connections={(dr.CONNECTION_NETWORK_MAC, self._mac_address)})
+        if not entity_registry.async_get(self.entity_id).device_id == new_device.id:
+            entity_registry._async_update_entity(self.entity_id, device_id=new_device.id)
+
     async def async_update(self, now=None):
         """Retrieve latest state."""
         _LOGGER.debug("updating alarms")
@@ -159,10 +174,10 @@ class SonosAlarmSwitch(SwitchEntity):
             self._is_available = await self.hass.async_add_executor_job(self._get_current_alarm_instance)
 
             if not self._is_available:
+                self.hass.async_create_task(self._async_remove())
                 return
 
             self._is_on = self.alarm.enabled
-
 
             if self._unique_player_id != self.alarm.zone.uid:
                 speaker_info = await self.hass.async_add_executor_job(lambda: self.alarm.zone.get_speaker_info(True))
@@ -171,6 +186,8 @@ class SonosAlarmSwitch(SwitchEntity):
                 self._sw_version: str = speaker_info["software_version"]
                 self._mac_address: str = speaker_info["mac_address"]
                 self._unique_player_id: str = self.alarm.zone.uid
+                await self._update_device()
+
 
             self._name = "Sonos Alarm {} {} {}".format(
                 self._speaker_name,
@@ -246,31 +263,18 @@ class SonosAlarmSwitch(SwitchEntity):
         """Return a unique ID."""
         return self._unique_id
 
-#    For future reference: Use the same device_info like sonos: -> needs some way to update the device_info
-#
-#    @property
-#    def device_info(self) -> dict:
-#        """Return information about the device."""
-#        return {
-#            "identifiers": {(SONOS_DOMAIN, self._unique_player_id)},
-#            "name": self._speaker_name,
-#            "model": self._model.replace("Sonos ", ""),
-#            "sw_version": self._sw_version,
-#            "connections": {(dr.CONNECTION_NETWORK_MAC, self._mac_address)},
-#            "manufacturer": "Sonos",
-#            "suggested_area": self._speaker_name,
-#        }
-#
     @property
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(SONOS_DOMAIN, self._unique_id)},
-            "name": "Sonos Alarm - ID: {}".format(self._id),
-            "model": "alarm",
+            "identifiers": {(SONOS_DOMAIN, self._unique_player_id)},
+            "name": self._speaker_name,
+            "model": self._model.replace("Sonos ", ""),
+            "sw_version": self._sw_version,
+            "connections": {(dr.CONNECTION_NETWORK_MAC, self._mac_address)},
             "manufacturer": "Sonos",
+            "suggested_area": self._speaker_name,
         }
-
 
     @property
     def available(self) -> bool:
