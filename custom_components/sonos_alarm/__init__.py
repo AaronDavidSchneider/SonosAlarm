@@ -11,7 +11,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.core import callback
 
-from .const import DOMAIN
+from .const import DOMAIN, DATA_SONOS
 
 CONF_ADVERTISE_ADDR = "advertise_addr"
 CONF_INTERFACE_ADDR = "interface_addr"
