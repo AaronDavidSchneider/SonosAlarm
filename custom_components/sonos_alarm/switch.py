@@ -256,15 +256,9 @@ class SonosAlarmSwitch(SwitchEntity):
         """Return soco object."""
         return self.alarm.zone
 
-    def _attach_player(self) -> None:
-        """Get basic information and add event subscriptions."""
-        self._play_mode = self.soco.play_mode
-
     async def _async_attach_player(self) -> bool:
         """Get basic information and add event subscriptions."""
         try:
-            await self.hass.async_add_executor_job(self._attach_player)
-
             player = self.soco
 
             if self._subscriptions:
