@@ -17,7 +17,7 @@ from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
 )
-
+from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import slugify
 
@@ -305,9 +305,10 @@ class SonosAlarmSwitch(SwitchEntity):
         entity_registry.async_remove(self.entity_id)
 
 
+    @callback
     def async_update_alarm(self, event = None):
         """Update information about alarm """
-        self.hass.async_add_job(self.async_remove_if_not_available(event))
+        self.hass.async_add_job(self.async_remove_if_not_available, event)
         self.hass.async_add_executor_job(self.update_alarm, event)
 
 
