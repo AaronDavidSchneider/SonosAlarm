@@ -141,7 +141,7 @@ def _get_entity_from_alarm_uid(hass, uid):
     """Return SonosEntity from SoCo uid."""
     entities = hass.data[DATA_SONOS].entities
     for entity in entities:
-        if uid == entity._id:
+        if uid == entity.alarm_id:
             return entity
     return None
 
@@ -159,9 +159,9 @@ class SonosAlarmSwitch(SwitchEntity):
 
         self._icon = "mdi:alarm"
         self.alarm = alarm
-        self._id = self.alarm._alarm_id
-        self._unique_id = "{}-{}".format(SONOS_DOMAIN,self._id)
-        _entity_id = slugify("sonos_alarm_{}".format(self._id))
+        self.alarm_id = self.alarm._alarm_id
+        self._unique_id = "{}-{}".format(SONOS_DOMAIN,self.alarm_id)
+        _entity_id = slugify("sonos_alarm_{}".format(self.alarm_id))
         self.entity_id = ENTITY_ID_FORMAT.format(_entity_id)
 
         speaker_info = self.alarm.zone.get_speaker_info(True)
@@ -175,7 +175,7 @@ class SonosAlarmSwitch(SwitchEntity):
 
         self._is_on = self.alarm.enabled
         self._attributes = {
-            ATTR_ID: str(self._id),
+            ATTR_ID: str(self.alarm_id),
             ATTR_TIME: str(self.alarm.start_time),
             ATTR_VOLUME: self.alarm.volume / 100,
             ATTR_DURATION: str(self.alarm.duration),
@@ -213,8 +213,6 @@ class SonosAlarmSwitch(SwitchEntity):
         """Record that this player was seen right now."""
         was_available = self.available
         _LOGGER.debug("Async seen: %s, was_available: %s", player, was_available)
-
-        self._player = player
 
         if self._seen_timer:
             self._seen_timer()
@@ -292,34 +290,30 @@ class SonosAlarmSwitch(SwitchEntity):
                 exc_info=True,
             )
 
+    async def async_remove_if_not_available(self, event = None):
+        is_available = await self.hass.async_add_executor_job(self._get_current_alarm_instance)
+
+        if is_available:
+            return
+
+        await self.async_unseen()
+
+        self.hass.data[DATA_SONOS].entities.remove(self)
+        self.hass.data[DATA_SONOS].discovered.remove(self.alarm)
+
+        entity_registry = er.async_get(self.hass)
+        entity_registry.async_remove(self.entity_id)
+
+
     def async_update_alarm(self, event = None):
         """Update information about alarm """
+        self.hass.async_add_job(self.async_remove_if_not_available(event))
         self.hass.async_add_executor_job(self.update_alarm, event)
 
 
     def update_alarm(self, event = None):
         """Retrieve latest state."""
         _LOGGER.debug("updating alarms")
-
-        def _remove():
-            """remove this entity as it is not available anymore"""
-            #WIP
-            # TODO: fix this? Move this to somewhere else
-            self._seen_timer = None
-
-            if self._poll_timer:
-                self._poll_timer()
-                self._poll_timer = None
-
-            for subscription in self._subscriptions:
-                subscription.unsubscribe()
-
-
-            #self.hass.data[DATA_SONOS].entities.pop()
-
-            entity_registry = er.async_get(self.hass)
-            entity_registry.async_remove(self.entity_id)
-
 
         def _update_device():
             """update the device, since this alarm moved to a different player"""
@@ -333,13 +327,6 @@ class SonosAlarmSwitch(SwitchEntity):
                                                                  (dr.CONNECTION_NETWORK_MAC, self._mac_address)})
             if not entity_registry.async_get(self.entity_id).device_id == new_device.id:
                 entity_registry._async_update_entity(self.entity_id, device_id=new_device.id)
-
-        is_available = self.hass.async_add_executor_job(self._get_current_alarm_instance)
-
-        if not is_available:
-            self.async_unseen()
-            _remove()
-            return
 
         self._is_on = self.alarm.enabled
 
@@ -359,7 +346,7 @@ class SonosAlarmSwitch(SwitchEntity):
             str(self.alarm.start_time)[0:5]
         )
 
-        self._attributes[ATTR_ID] = str(self._id)
+        self._attributes[ATTR_ID] = str(self.alarm_id)
         self._attributes[ATTR_TIME] = str(self.alarm.start_time)
         self._attributes[ATTR_DURATION] = str(self.alarm.duration)
         self._attributes[ATTR_RECURRENCE] = str(self.alarm.recurrence)
