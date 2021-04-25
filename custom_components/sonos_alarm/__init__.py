@@ -61,27 +61,6 @@ async def async_setup_entry(hass, entry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, domain)
         )
-    async_cleanup_sonos_devices(hass, entry)
     return True
 
 
-@callback
-def async_cleanup_sonos_devices(hass, entry):
-    """Clean up old and invalid devices from the registry."""
-    device_registry = dr.async_get(hass)
-    entity_registry = er.async_get(hass)
-
-    device_entries = hass.helpers.device_registry.async_entries_for_config_entry(
-        device_registry, entry.entry_id
-    )
-
-    for device_entry in device_entries:
-        if (
-                len(
-                    hass.helpers.entity_registry.async_entries_for_device(
-                        entity_registry, device_entry.id, include_disabled_entities=True
-                    )
-                )
-                == 0
-        ):
-            device_registry.async_remove_device(device_entry.id)

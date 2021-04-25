@@ -92,14 +92,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             try:
                 _LOGGER.debug("Reached _discovered_player, soco=%s", soco)
                 for one_alarm in alarms.get_alarms(soco):
-                    if one_alarm.zone == soco and one_alarm not in hass.data[DATA_SONOS].discovered:
+                    if one_alarm.zone == soco and one_alarm._alarm_id not in hass.data[DATA_SONOS].discovered:
                         _LOGGER.debug("Adding new alarm")
-                        hass.data[DATA_SONOS].discovered.append(one_alarm)
+                        hass.data[DATA_SONOS].discovered.append(one_alarm._alarm_id)
                         hass.add_job(
                             async_add_entities, [SonosAlarmSwitch(one_alarm)],
                         )
                     else:
-                        entity = _get_entity_from_alarm_uid(hass, one_alarm._alarm_id)
+                        entity = _get_entity_from_alarm_id(hass, one_alarm._alarm_id)
                         if entity and (entity.soco == soco or not entity.available):
                             _LOGGER.debug("Seen %s", entity)
                             hass.add_job(entity.async_seen(soco))  # type: ignore
@@ -137,11 +137,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     hass.async_add_executor_job(_discovery)
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _stop_discovery)
 
-def _get_entity_from_alarm_uid(hass, uid):
-    """Return SonosEntity from SoCo uid."""
+def _get_entity_from_alarm_id(hass, id):
+    """Return SonosEntity from alarm id."""
     entities = hass.data[DATA_SONOS].entities
     for entity in entities:
-        if uid == entity.alarm_id:
+        if id == entity.alarm_id:
             return entity
     return None
 
@@ -299,7 +299,7 @@ class SonosAlarmSwitch(SwitchEntity):
         await self.async_unseen()
 
         self.hass.data[DATA_SONOS].entities.remove(self)
-        self.hass.data[DATA_SONOS].discovered.remove(self.alarm)
+        self.hass.data[DATA_SONOS].discovered.remove(self.alarm_id)
 
         entity_registry = er.async_get(self.hass)
         entity_registry.async_remove(self.entity_id)
