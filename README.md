@@ -1,3 +1,5 @@
+## OUTDATED: Merged into [Homeassistant](https://www.home-assistant.io/integrations/sonos/#alarm-support)
+
 ![Logo](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/logo%402x.png)
 
 # Sonos Alarm
