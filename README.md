@@ -1,5 +1,7 @@
 ![Logo](https://raw.githubusercontent.com/AaronDavidSchneider/SonosAlarm/master/logo%402x.png)
 
+# OUTDATED: Merged into [Homeassistant](https://www.home-assistant.io/integrations/sonos/#alarm-support)
+
 # Sonos Alarm
 
 Custom component for Home Assistant to control your SONOS Alarm
